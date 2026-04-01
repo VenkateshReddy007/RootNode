@@ -1,0 +1,16 @@
+app_id,name,dependencies,criticality,data_size,business_priority,complexity
+APP001,User Auth Service,,critical,120.5,1,complex
+APP002,Payment Gateway,APP001,critical,85.0,1,very_complex
+APP003,Product Catalog,APP001,high,200.0,2,moderate
+APP004,Order Management,"APP002,APP003",high,150.0,2,complex
+APP005,Email Notification Service,APP001,medium,10.0,3,simple
+APP006,Analytics Dashboard,"APP003,APP004",medium,500.0,3,moderate
+APP007,Customer Support Portal,"APP001,APP006",high,45.0,2,moderate
+APP008,Inventory Manager,APP003,high,300.0,2,complex
+APP009,Reporting Engine,"APP006,APP008",medium,80.0,4,moderate
+APP010,Legacy CRM,,low,1200.0,5,very_complex
+APP011,API Gateway,"APP001,APP002,APP003",critical,5.0,1,complex
+APP012,CDN Asset Server,,low,2000.0,4,simple
+APP013,Search Service,APP003,medium,150.0,3,complex
+APP014,Recommendation Engine,"APP003,APP013",medium,75.0,3,very_complex
+APP015,Mobile BFF,"APP011,APP002",high,2.0,2,moderate

@@ -1,0 +1,139 @@
+{
+  "applications": [
+    {
+      "app_id": "APP001",
+      "name": "User Auth Service",
+      "dependencies": [],
+      "criticality": "critical",
+      "data_size": 120.5,
+      "business_priority": 1,
+      "complexity": "complex"
+    },
+    {
+      "app_id": "APP002",
+      "name": "Payment Gateway",
+      "dependencies": ["APP001"],
+      "criticality": "critical",
+      "data_size": 85.0,
+      "business_priority": 1,
+      "complexity": "very_complex"
+    },
+    {
+      "app_id": "APP003",
+      "name": "Product Catalog",
+      "dependencies": ["APP001"],
+      "criticality": "high",
+      "data_size": 200.0,
+      "business_priority": 2,
+      "complexity": "moderate"
+    },
+    {
+      "app_id": "APP004",
+      "name": "Order Management",
+      "dependencies": ["APP002", "APP003"],
+      "criticality": "high",
+      "data_size": 150.0,
+      "business_priority": 2,
+      "complexity": "complex"
+    },
+    {
+      "app_id": "APP005",
+      "name": "Email Notification Service",
+      "dependencies": ["APP001"],
+      "criticality": "medium",
+      "data_size": 10.0,
+      "business_priority": 3,
+      "complexity": "simple"
+    },
+    {
+      "app_id": "APP006",
+      "name": "Analytics Dashboard",
+      "dependencies": ["APP003", "APP004"],
+      "criticality": "medium",
+      "data_size": 500.0,
+      "business_priority": 3,
+      "complexity": "moderate"
+    },
+    {
+      "app_id": "APP007",
+      "name": "Customer Support Portal",
+      "dependencies": ["APP001", "APP006"],
+      "criticality": "high",
+      "data_size": 45.0,
+      "business_priority": 2,
+      "complexity": "moderate"
+    },
+    {
+      "app_id": "APP008",
+      "name": "Inventory Manager",
+      "dependencies": ["APP003"],
+      "criticality": "high",
+      "data_size": 300.0,
+      "business_priority": 2,
+      "complexity": "complex"
+    },
+    {
+      "app_id": "APP009",
+      "name": "Reporting Engine",
+      "dependencies": ["APP006", "APP008"],
+      "criticality": "medium",
+      "data_size": 80.0,
+      "business_priority": 4,
+      "complexity": "moderate"
+    },
+    {
+      "app_id": "APP010",
+      "name": "Legacy CRM",
+      "dependencies": [],
+      "criticality": "low",
+      "data_size": 1200.0,
+      "business_priority": 5,
+      "complexity": "very_complex"
+    },
+    {
+      "app_id": "APP011",
+      "name": "API Gateway",
+      "dependencies": ["APP001", "APP002", "APP003"],
+      "criticality": "critical",
+      "data_size": 5.0,
+      "business_priority": 1,
+      "complexity": "complex"
+    },
+    {
+      "app_id": "APP012",
+      "name": "CDN Asset Server",
+      "dependencies": [],
+      "criticality": "low",
+      "data_size": 2000.0,
+      "business_priority": 4,
+      "complexity": "simple"
+    },
+    {
+      "app_id": "APP013",
+      "name": "Search Service",
+      "dependencies": ["APP003"],
+      "criticality": "medium",
+      "data_size": 150.0,
+      "business_priority": 3,
+      "complexity": "complex"
+    },
+    {
+      "app_id": "APP014",
+      "name": "Recommendation Engine",
+      "dependencies": ["APP003", "APP013"],
+      "criticality": "medium",
+      "data_size": 75.0,
+      "business_priority": 3,
+      "complexity": "very_complex"
+    },
+    {
+      "app_id": "APP015",
+      "name": "Mobile BFF",
+      "dependencies": ["APP011", "APP002"],
+      "criticality": "high",
+      "data_size": 2.0,
+      "business_priority": 2,
+      "complexity": "moderate"
+    }
+  ]
+}
