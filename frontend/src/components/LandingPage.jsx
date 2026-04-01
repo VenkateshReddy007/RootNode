@@ -123,27 +123,27 @@ const HeroSection = ({ onEnterApp }) => {
 
       {/* Headline */}
       <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black leading-tight mb-6">
-        {['Cloud', 'Migration,'].map((word, i) => (
+        {['Cloud ', 'Migration, '].map((word, i) => (
           <motion.span
-            key={word}
+            key={i}
             custom={i}
             initial="hidden"
             animate="visible"
             variants={wordVariants}
-            className="inline-block mr-4 text-white"
+            className="inline-block text-white"
           >
             {word}
           </motion.span>
         ))}
         <br />
-        {['Replanned', 'by', 'AI.'].map((word, i) => (
+        {['Replanned ', 'by ', 'AI.'].map((word, i) => (
           <motion.span
-            key={word}
+            key={i}
             custom={i + 2}
             initial="hidden"
             animate="visible"
             variants={wordVariants}
-            className="inline-block mr-4 text-[#FF9900] italic"
+            className="inline-block text-[#FF9900] italic"
           >
             {word}
           </motion.span>
