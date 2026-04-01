@@ -1,5 +1,6 @@
 import React from 'react';
 import { Cloud } from 'lucide-react';
+import { SignedIn, UserButton } from '@clerk/clerk-react';
 
 const Navbar = () => {
   return (
@@ -9,10 +10,13 @@ const Navbar = () => {
         <span className="font-bold text-xl tracking-wide">RootNode Migration Planner</span>
       </div>
       
-      <div className="flex items-center">
+      <div className="flex items-center gap-4">
         <span className="px-4 py-1.5 text-xs font-bold text-brand-orange bg-brand-orange/10 border border-brand-orange/50 rounded-full shadow-[0_0_12px_rgba(255,153,0,0.4)] tracking-wider uppercase">
           AI Powered
         </span>
+        <SignedIn>
+          <UserButton afterSignOutUrl="/" appearance={{ elements: { userButtonAvatarBox: 'w-8 h-8' } }} />
+        </SignedIn>
       </div>
     </nav>
   );
