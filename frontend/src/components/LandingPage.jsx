@@ -119,15 +119,7 @@ const HeroSection = ({ onEnterApp }) => {
 
   return (
     <section className="relative z-[1] h-screen flex flex-col items-center justify-center text-center px-6 snap-start">
-      {/* Badge */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="mb-8 inline-flex items-center gap-2 bg-[#111] border border-[#FF9900]/40 text-[#FF9900] rounded-full px-5 py-2 text-sm font-semibold tracking-wider"
-      >
-        ⚡ HACK'A'WAR 2026 · PS 2.4
-      </motion.div>
+
 
       {/* Headline */}
       <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black leading-tight mb-6">
@@ -191,6 +183,97 @@ const HeroSection = ({ onEnterApp }) => {
     </section>
   );
 };
+
+/* ════════════════════════════════════════════════════
+   MARQUEE STRIP — between Hero and Problem
+   ════════════════════════════════════════════════════ */
+const MARQUEE_CARDS = [
+  { emoji: '🔗', title: 'Dependency Graph',    sub: 'Auto-built DAG' },
+  { emoji: '🌊', title: 'Wave Planning',        sub: 'Topological sort' },
+  { emoji: '⚠️', title: 'Risk Scoring',         sub: '4-factor analysis' },
+  { emoji: '🤖', title: 'AI Explanation',       sub: 'Amazon Bedrock' },
+  { emoji: '🔄', title: 'Strategy Assignment',  sub: 'Rehost · Replatform · Refactor' },
+  { emoji: '📅', title: 'Timeline Estimation',  sub: 'Per app & per wave' },
+];
+
+const MarqueeCard = ({ emoji, title, sub }) => (
+  <div
+    style={{
+      display: 'flex',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: '12px',
+      background: '#111111',
+      border: '1px solid rgba(255,153,0,0.4)',
+      borderRadius: '1rem',
+      padding: '16px 24px',
+      whiteSpace: 'nowrap',
+      minWidth: '220px',
+      flexShrink: 0,
+      userSelect: 'none',
+    }}
+  >
+    <span style={{ fontSize: '1.5rem', lineHeight: 1 }}>{emoji}</span>
+    <div>
+      <div style={{ color: '#ffffff', fontWeight: 600, fontSize: '0.875rem' }}>{title}</div>
+      <div style={{ color: '#FF9900', fontWeight: 500, fontSize: '0.75rem', marginTop: 2 }}>{sub}</div>
+    </div>
+  </div>
+);
+
+const MarqueeSection = () => (
+  <section
+    className="relative z-[1] snap-start"
+    style={{ padding: '32px 0', overflow: 'hidden' }}
+  >
+    {/* @keyframes injected once */}
+    <style>{`
+      @keyframes marquee {
+        from { transform: translateX(0); }
+        to   { transform: translateX(-50%); }
+      }
+      .marquee-track {
+        animation: marquee 30s linear infinite;
+      }
+      .marquee-track:hover {
+        animation-play-state: paused;
+      }
+    `}</style>
+
+    {/* Label */}
+    <p style={{
+      textAlign: 'center',
+      color: '#FF9900',
+      fontWeight: 700,
+      fontSize: '0.7rem',
+      letterSpacing: '0.2em',
+      textTransform: 'uppercase',
+      marginBottom: '16px',
+    }}>
+      WHAT ROOTNODE DOES
+    </p>
+
+    {/* Fade-edge mask wrapper */}
+    <div
+      style={{
+        overflow: 'hidden',
+        maskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)',
+        WebkitMaskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)',
+      }}
+    >
+      {/* Scrolling track — card list duplicated for seamless loop */}
+      <div
+        className="marquee-track"
+        style={{ display: 'flex', width: 'fit-content', gap: '16px' }}
+      >
+        {/* Original set */}
+        {MARQUEE_CARDS.map((c) => <MarqueeCard key={`a-${c.title}`} {...c} />)}
+        {/* Clone set — creates the seamless illusion */}
+        {MARQUEE_CARDS.map((c) => <MarqueeCard key={`b-${c.title}`} {...c} />)}
+      </div>
+    </div>
+  </section>
+);
 
 /* ════════════════════════════════════════════════════
    SECTION 2 — PROBLEM
@@ -436,6 +519,7 @@ const LandingPage = ({ onEnterApp }) => {
       <LandingNav onEnterApp={onEnterApp} />
 
       <HeroSection onEnterApp={onEnterApp} />
+      <MarqueeSection />
       <ProblemSection />
       <HowItWorksSection />
       <ArchitectureSection />
