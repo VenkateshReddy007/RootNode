@@ -10,6 +10,7 @@ import GraphView from './components/GraphView';
 import RiskTable from './components/RiskTable';
 import GanttChart from './components/GanttChart';
 import AIPanel from './components/AIPanel';
+import RiskHeatmap from './components/RiskHeatmap';
 
 import { MOCK_DATA } from './data/mock';
 
@@ -78,6 +79,9 @@ function App() {
                     <GraphView
                       waves={result.waves}
                       dependencies={result.dependencies}
+                      risk={result.risk}
+                      strategy={result.strategy}
+                      timeline={result.timeline}
                     />
                   </div>
 
@@ -94,7 +98,14 @@ function App() {
                     />
                   </div>
 
-                  {/* 4. AI Panel — full width */}
+                  {/* 4. Risk Heatmap — full width */}
+                  <RiskHeatmap
+                    risk={result.risk}
+                    strategy={result.strategy}
+                    timeline={result.timeline}
+                  />
+
+                  {/* 5. AI Panel — full width */}
                   <AIPanel explanation={result.explanation} />
                 </motion.div>
               )}
