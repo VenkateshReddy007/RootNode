@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SignedIn, SignedOut, SignIn, useUser } from '@clerk/clerk-react';
+import axios from 'axios';
 
 import LandingPage from './components/LandingPage';
 import Navbar from './components/Navbar';
@@ -12,24 +13,56 @@ import GanttChart from './components/GanttChart';
 import AIPanel from './components/AIPanel';
 import RiskHeatmap from './components/RiskHeatmap';
 
-import { MOCK_DATA } from './data/mock';
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  'https://zztl0gdz8i.execute-api.ap-south-2.amazonaws.com';
+
+/* ── CSV parser: header row → array of objects ── */
+function parseCSV(csvText) {
+  const lines = csvText.trim().split('\n').filter(Boolean);
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(',').map((h) => h.trim());
+  return lines.slice(1).map((line) => {
+    const vals = line.split(',').map((v) => v.trim());
+    return headers.reduce((obj, h, i) => ({ ...obj, [h]: vals[i] ?? '' }), {});
+  });
+}
 
 function App() {
   const { isSignedIn, isLoaded } = useUser();
-  // If user is already signed in, skip landing and go straight to the planner
   const [showLanding, setShowLanding] = useState(true);
   const [result, setResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [toast, setToast] = useState(null); // { message, type }
 
-  const handleAnalyze = (csvText) => {
+  const showToast = (message, type = 'error') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  const handleAnalyze = async (csvText) => {
     setIsLoading(true);
     setResult(null);
 
-    // Simulate 2-second API delay — will be replaced with real API call
-    setTimeout(() => {
-      setResult(MOCK_DATA);
+    const data = parseCSV(csvText);
+    if (data.length === 0) {
+      showToast('Analysis failed — check your CSV format');
       setIsLoading(false);
-    }, 2000);
+      return;
+    }
+
+    try {
+      const response = await axios.post(`${API_URL}/analyze`, { data });
+      setResult(response.data);
+    } catch (err) {
+      console.error('API error:', err);
+      showToast(
+        err?.response?.data?.message ||
+        'Analysis failed — check your CSV format'
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   /* ── Wait for Clerk to resolve auth — prevents flash of landing page ── */
@@ -49,6 +82,26 @@ function App() {
         <div className="min-h-screen bg-brand-dark text-white font-sans">
           {/* Navbar */}
           <Navbar />
+
+          {/* Toast Notification */}
+          <AnimatePresence>
+            {toast && (
+              <motion.div
+                initial={{ opacity: 0, y: 50, x: '-50%' }}
+                animate={{ opacity: 1, y: 0, x: '-50%' }}
+                exit={{ opacity: 0, y: 20, x: '-50%' }}
+                className="fixed bottom-10 left-1/2 z-[100] px-6 py-3 rounded-full shadow-2xl border flex items-center gap-3 backdrop-blur-md"
+                style={{
+                  backgroundColor: toast.type === 'error' ? 'rgba(239, 68, 68, 0.9)' : 'rgba(34, 197, 94, 0.9)',
+                  borderColor: toast.type === 'error' ? 'rgba(239, 68, 68, 0.4)' : 'rgba(34, 197, 94, 0.4)',
+                }}
+              >
+                <span className="text-white font-bold text-sm tracking-wide">
+                  {toast.type === 'error' ? '❌' : '✅'} {toast.message}
+                </span>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Main Content */}
           <main className="px-8 py-6">
