@@ -116,7 +116,12 @@ class ApplicationRecord(BaseModel):
     @classmethod
     def normalize_complexity(cls, v):
         if isinstance(v, str):
-            return v.strip().lower()
+            s = v.strip().lower()
+            if s in ("low", "simple"): return "simple"
+            if s in ("medium", "moderate"): return "moderate"
+            if s in ("high", "complex"): return "complex"
+            if s in ("critical", "very_complex"): return "very_complex"
+            return s
         return v
 
     @field_validator("data_size", mode="before")
@@ -130,7 +135,19 @@ class ApplicationRecord(BaseModel):
     @classmethod
     def coerce_priority(cls, v):
         if isinstance(v, str):
-            return int(v.strip()) if v.strip() else 3
+            s = v.strip().lower()
+            if not s:
+                return 3
+            if s in ("high", "highest", "critical"):
+                return 1
+            if s in ("medium", "normal"):
+                return 3
+            if s in ("low", "lowest"):
+                return 5
+            try:
+                return int(s)
+            except ValueError:
+                return 3
         return v
 
     model_config = {

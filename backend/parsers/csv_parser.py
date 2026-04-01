@@ -123,16 +123,19 @@ _COLUMN_ALIASES: Dict[str, str] = {
     "app_id": "app_id",
     "application_id": "app_id",
     "id": "app_id",
+    "application": "app_id",
     "application_name": "name",
     "app_name": "name",
     "name": "name",
     "deps": "dependencies",
     "dependencies": "dependencies",
     "depends_on": "dependencies",
+    "dependson": "dependencies",
     "criticality": "criticality",
     "priority": "business_priority",
     "business_priority": "business_priority",
     "data_size": "data_size",
+    "datasize": "data_size",
     "data_size_gb": "data_size",
     "size_gb": "data_size",
     "complexity": "complexity",
@@ -205,6 +208,13 @@ def _parse_json(content: str) -> List[Dict[str, Any]]:
             key = k.strip().lower().replace(" ", "_").replace("-", "_")
             canonical = _COLUMN_ALIASES.get(key, key)
             normed[canonical] = v
+        
+        # Ensure both app_id and name exist
+        if "app_id" in normed and "name" not in normed:
+            normed["name"] = normed["app_id"]
+        elif "name" in normed and "app_id" not in normed:
+            normed["app_id"] = normed["name"]
+            
         normalized.append(normed)
 
     return normalized

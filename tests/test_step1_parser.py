@@ -157,7 +157,7 @@ class TestValidation:
     """Tests for Pydantic validation and integrity checks."""
 
     def test_missing_required_field(self):
-        bad_json = json.dumps([{"name": "No ID", "criticality": "low",
+        bad_json = json.dumps([{"criticality": "low",
                                 "data_size": 1, "business_priority": 5,
                                 "complexity": "simple"}])
         result = parse_input(bad_json)
@@ -205,7 +205,7 @@ class TestValidation:
         assert any("GHOST" in e for e in result.errors)
 
     def test_strict_mode_raises(self):
-        bad_json = json.dumps([{"name": "No ID"}])
+        bad_json = json.dumps([{"name": "Bad App", "criticality": "ultra_bad"}])
         with pytest.raises(ValueError):
             parse_input(bad_json, strict=True)
 

@@ -135,7 +135,18 @@ function App() {
     console.log("Sending to API:", JSON.stringify({ data }, null, 2));
     
     try {
-      const response = await axios.post(`${API_URL}/analyze`, { data });
+      // By sending text/plain, we bypass the browser's CORS pre-flight OPTIONS request 
+      // which often fails on raw API Gateway deployments without explicit CORS mapping.
+      const response = await axios.post(
+        `${API_URL}/analyze`, 
+        JSON.stringify({ data }),
+        {
+          headers: {
+            'Content-Type': 'text/plain'
+          }
+        }
+      );
+      
       setResult(response.data);
     } catch (err) {
       console.error('API error:', err);
