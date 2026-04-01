@@ -174,21 +174,54 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 ai_response = {"error": "AI analysis failed.", "details": str(e)}
 
         # ---- 8. Return Aggregated JSON -------------------------------------
-        logger.info("Step 8: Constructing final response...")
+        logger.info("Step 8: Constructing final response (matching frontend schema)...")
         
-        # Serialize the graph safely
-        graph_data = graph_to_dict(G)
-        
+        # 1. waves: List[List[str]] (app names per wave)
+        waves_out = []
+        for w in wave_result.waves:
+            waves_out.append([app.name for app in w.apps])
+            
+        # 2. dependencies: Dict[str, List[str]] (app name -> list of dependency app names)
+        # We need a map of app_id -> name first
+        id_to_name = {app.app_id: app.name for app in apps}
+        deps_out = {}
+        for app in apps:
+            if app.dependencies:
+                deps_out[app.name] = [id_to_name.get(dep_id, dep_id) for dep_id in app.dependencies]
+                
+        # 3. risk: Dict[str, str] and 4. strategy: Dict[str, str]
+        risk_out = {}
+        strategy_out = {}
+        for app in scored_apps:
+            risk_tier = getattr(app, 'risk_level', 'Medium') if hasattr(app, 'risk_level') else 'Medium'
+            risk_out[app.name] = str(risk_tier).capitalize()
+            strategy_out[app.name] = getattr(app, 'migration_strategy', 'Rehost')
+            
+        # 5. timeline: Dict[str, str]
+        timeline_out = {}
+        time_dict = timeline.to_dict()
+        for w in time_dict.get('waves', []):
+            for a in w.get('apps', []):
+                # We format it to standard UI string
+                min_dys = int(a.get('min_days', 0))
+                max_dys = int(a.get('max_days', 0))
+                timeline_out[a.get('name', 'App')] = f"{min_dys}-{max_dys} Days"
+                
+        # 6. explanation: str
+        explanation_out = "AI Analysis is turned off or failed. Using computed backend algorithms."
+        if ai_response and isinstance(ai_response, dict) and "response" in ai_response:
+            explanation_out = str(ai_response["response"])
+
         response_data = {
-            "metadata": {
-                "total_apps": parse_result.valid_count,
-                "total_waves": wave_result.total_waves,
-                "is_dag": wave_result.is_valid,
-            },
-            "strategy_summary": get_strategy_summary(strategies),
-            "timeline": timeline.to_dict(),
-            "graph": graph_data,
-            "ai_roadmap": ai_response,
+            "waves": waves_out,
+            "dependencies": deps_out,
+            "risk": risk_out,
+            "strategy": strategy_out,
+            "timeline": timeline_out,
+            "explanation": explanation_out,
+            # include the raw dicts as well for debugging if needed
+            "_debug_graph": graph_to_dict(G),
+            "_debug_ai": ai_response
         }
 
         return _build_response(200, response_data)
