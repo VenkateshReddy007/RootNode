@@ -19,68 +19,93 @@ const API_URL =
 
 /* ── Ultra-Robust Smart CSV Parser ── */
 function parseCSV(csvText) {
-  // 1. Heal split lines (e.g. "Product\nion" -> "Production")
-  const rawLines = csvText.trim().split('\n').map(l => l.trim()).filter(l => l.length > 0);
-  const healedLines = [];
-  for (let i = 0; i < rawLines.length; i++) {
-    if (i > 0 && !rawLines[i].includes(',') && rawLines[i-1].includes(',')) {
-      healedLines[healedLines.length - 1] += rawLines[i];
-    } else {
-      healedLines.push(rawLines[i]);
-    }
-  }
+  const lines = csvText
+    .split('\n')
+    .map(l => l.trim())
+    .filter(l => l.length > 0);
+    
+  if (lines.length === 0) return [];
 
-  // 2. Filter for lines that actually look like CSV data
-  const dataLines = healedLines.filter(l => l.includes(','));
-  if (dataLines.length === 0) return [];
-
-  const firstLine = dataLines[0].toLowerCase();
+  const firstLine = lines[0].toLowerCase();
   const hasHeader = firstLine.includes('app') || firstLine.includes('depend') || firstLine.includes('critical');
   
   let headers = [];
   let rows = [];
 
   if (hasHeader) {
-    headers = dataLines[0].split(',').map(h => h.trim());
-    rows = dataLines.slice(1);
+    headers = lines[0].split(',').map(h => h.trim());
+    rows = lines.slice(1);
   } else {
     // Detect column count and use a smart default mapping
-    const sampleCols = dataLines[0].split(',');
+    const sampleCols = lines[0].split(',');
     if (sampleCols.length >= 10) {
       // 11-column Discovery format
       headers = ['ID', 'Application', 'DependsOn', 'OtherDeps', 'Meta1', 'Meta2', 'DataSize', 'Criticality', 'Priority', 'Complexity', 'Env'];
     } else {
       headers = ['Application', 'DependsOn', 'Criticality', 'DataSize', 'Priority', 'Complexity'];
     }
-    rows = dataLines;
+    rows = lines;
   }
 
-  return rows.map((line) => {
-    const vals = line.split(',').map((v) => v.trim());
+  return rows.map(line => {
+    const values = line.split(',').map(v => v.trim());
+    
+    // Map headers to values
     const obj = {};
-    headers.forEach((h, i) => {
-      // Map everything to the 6 keys the backend expects
-      let key = h;
-      if (h.toLowerCase().includes('app') || h === 'Name') key = 'Application';
-      else if (h.toLowerCase().includes('depend')) key = 'DependsOn';
-      else if (h.toLowerCase().includes('critical')) key = 'Criticality';
-      else if (h.toLowerCase().includes('data')) key = 'DataSize';
-      else if (h.toLowerCase().includes('priority')) key = 'Priority';
-      else if (h.toLowerCase().includes('complex')) key = 'Complexity';
+    headers.forEach((header, i) => {
+      // Map everything to the 6 keys the validateCSV expects
+      let key = header;
+      if (header.toLowerCase().includes('app') || header === 'Name' || header === 'ID') key = 'Application';
+      else if (header.toLowerCase().includes('depend')) key = 'DependsOn';
+      else if (header.toLowerCase().includes('critical')) key = 'Criticality';
+      else if (header.toLowerCase().includes('data')) key = 'DataSize';
+      else if (header.toLowerCase().includes('priority')) key = 'Priority';
+      else if (header.toLowerCase().includes('complex')) key = 'Complexity';
       
-      // If we have an existing value for a key (like multiple dependency columns), join them
-      if (key === 'DependsOn' && obj[key] && vals[i]) {
-        obj[key] = `${obj[key]};${vals[i]}`;
-      } else if (['Application', 'DependsOn', 'Criticality', 'DataSize', 'Priority', 'Complexity'].includes(key)) {
-        obj[key] = vals[i] ?? '';
+      if (['Application', 'DependsOn', 'Criticality', 'DataSize', 'Priority', 'Complexity'].includes(key)) {
+         // Don't overwrite Application if we already mapped it but want the readable name
+         if (key === 'Application' && obj[key] && i > 0 && values[i]) {
+            obj[key] = values[i];
+         } else if (key === 'DependsOn' && obj[key] && values[i]) {
+            obj[key] = `${obj[key]};${values[i]}`;
+         } else if (!obj[key]) {
+            obj[key] = values[i] ?? '';
+         }
       }
     });
 
-    // Final fallback: Ensure Application is never empty if we have an ID
-    if (!obj.Application && vals[0]) obj.Application = vals[0];
-    
+    // Step 4: Fix DependsOn — convert to ARRAY
+    const depRaw = obj['DependsOn'] || '';
+    obj['DependsOn'] = depRaw
+      .split(/[;|,]/)           
+      .map(d => d.trim())
+      .filter(d => d.length > 0); 
+
+    // Step 5: Fix DataSize — convert to NUMBER
+    const numericStr = String(obj['DataSize']).replace(/[^0-9.]/g, '');
+    obj['DataSize'] = parseInt(numericStr) || 0;
+
+    // Step 6: Normalize Criticality to "Yes"/"No"
+    const crit = (obj['Criticality'] || '').toLowerCase();
+    obj['Criticality'] = 
+      ['yes', 'true', '1', 'high', 'critical'].includes(crit) ? 'Yes' : 'No';
+
     return obj;
   });
+}
+
+function validateCSV(parsed) {
+  const required = ['Application','DependsOn','Criticality',
+                    'DataSize','Priority','Complexity'];
+  if (parsed.length === 0) 
+    return "CSV is empty — add at least one application row";
+  
+  const headers = Object.keys(parsed[0]);
+  const missing = required.filter(r => !headers.includes(r));
+  if (missing.length > 0) 
+    return `Missing columns: ${missing.join(', ')}`;
+  
+  return null; // null = valid
 }
 
 function App() {
@@ -100,93 +125,21 @@ function App() {
     setResult(null);
 
     const data = parseCSV(csvText);
-    
-    // Comprehensive mock data fallback
-    const MOCK_DATA = {
-      waves: [
-        ['AuthService', 'InventoryService', 'LoggingService', 'CacheLayer'],
-        ['SearchService', 'FrontendWeb'],
-        ['MonitoringService', 'PaymentService'],
-        ['ReportingService', 'BillingService', 'FraudDetection', 'EmailService', 'AnalyticsService', 'NotificationService']
-      ],
-      dependencies: {
-        SearchService: ['InventoryService'],
-        LoggingService: ['MonitoringService'],
-        MonitoringService: ['LoggingService'],
-        ReportingService: ['AnalyticsService'],
-        BillingService: ['PaymentService'],
-        EmailService: ['NotificationService'],
-        FraudDetection: ['PaymentService'],
-        CacheLayer: ['FrontendWeb', 'AuthService']
-      },
-      risk: {
-        SearchService: 'Medium',
-        InventoryService: 'Low',
-        LoggingService: 'Low',
-        MonitoringService: 'Low',
-        ReportingService: 'Medium',
-        AnalyticsService: 'Medium',
-        BillingService: 'High',
-        PaymentService: 'High',
-        EmailService: 'Low',
-        NotificationService: 'Low',
-        FraudDetection: 'High',
-        CacheLayer: 'Low',
-        FrontendWeb: 'Medium',
-        AuthService: 'High'
-      },
-      strategy: {
-        SearchService: 'Replatform',
-        InventoryService: 'Rehost',
-        LoggingService: 'Rehost',
-        MonitoringService: 'Rehost',
-        ReportingService: 'Replatform',
-        AnalyticsService: 'Replatform',
-        BillingService: 'Refactor',
-        PaymentService: 'Refactor',
-        EmailService: 'Rehost',
-        NotificationService: 'Rehost',
-        FraudDetection: 'Refactor',
-        CacheLayer: 'Rehost',
-        FrontendWeb: 'Replatform',
-        AuthService: 'Refactor'
-      },
-      timeline: {
-        SearchService: '3-6 Months',
-        InventoryService: '0-3 Months',
-        LoggingService: '0-3 Months',
-        MonitoringService: '0-3 Months',
-        ReportingService: '3-6 Months',
-        AnalyticsService: '3-6 Months',
-        BillingService: '6-12 Months',
-        PaymentService: '6-12 Months',
-        EmailService: '0-3 Months',
-        NotificationService: '0-3 Months',
-        FraudDetection: '6-12 Months',
-        CacheLayer: '0-3 Months',
-        FrontendWeb: '3-6 Months',
-        AuthService: '6-12 Months'
-      },
-      explanation: "This is a mock analysis result. The system analyzed your AWS application portfolio. Highly critical payment and fraud services were scheduled for later waves to allow core dependencies (like Auth and Inventory) to migrate first. Core services with low complexity go into Wave 1 (Rehost), while heavy transactions require Refactoring in Waves 3 and 4."
-    };
-
-    if (data.length === 0) {
-      setTimeout(() => {
-        setResult(MOCK_DATA);
-        setIsLoading(false);
-      }, 1500);
+    const validationError = validateCSV(data);
+    if (validationError) {
+      showToast(validationError, 'error');
+      setIsLoading(false);
       return;
     }
 
+    console.log("Sending to API:", JSON.stringify({ data }, null, 2));
+    
     try {
       const response = await axios.post(`${API_URL}/analyze`, { data });
       setResult(response.data);
     } catch (err) {
       console.error('API error:', err);
-      // Fallback to mock data silently when API fails
-      setTimeout(() => {
-        setResult(MOCK_DATA);
-      }, 1000);
+      showToast(err.response?.data?.error || err.message || "Failed to analyze migration. Check API endpoint.", "error");
     } finally {
       setIsLoading(false);
     }
